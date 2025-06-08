@@ -61,7 +61,7 @@ with st.sidebar:
     st.session_state.min_digits = st.selectbox("最小桁数", [1, 2, 3], index=0)
     st.session_state.max_digits = st.selectbox("最大桁数", [1, 2, 3], index=0)
     st.session_state.operator_choice = st.selectbox("演算子", ["+", "-", "×", "÷"])
-    st.session_state.display_speed = st.slider("表示速度（秒）", 0.1, 2.0, 1.0, 0.1)
+    st.session_state.display_speed = st.slider("表示速度（秒）", 0.2, 2.0, 0.8, 0.1)
 
     if st.session_state.total_count > 0:
         acc = round(100 * st.session_state.correct_count / st.session_state.total_count, 1)
@@ -92,11 +92,19 @@ if st.button("▶ スタート", use_container_width=True):
     st.session_state.digit_input = ""
     st.rerun()
 
-# 表示フェーズ
+# 出題フェーズ（演算子も表示）
 if st.session_state.started and st.session_state.showing_problem:
-    if st.session_state.current_problem_index < len(st.session_state.problems):
-        num = st.session_state.problems[st.session_state.current_problem_index]
-        st.markdown(f"<div class='problem-display'>{num}</div>", unsafe_allow_html=True)
+    max_index = len(st.session_state.problems) * 2 - 1
+    idx = st.session_state.current_problem_index
+    if idx < max_index:
+        if idx % 2 == 0:
+            # 数字表示
+            display = str(st.session_state.problems[idx // 2])
+        else:
+            # 演算子表示
+            display = st.session_state.operator
+
+        st.markdown(f"<div class='problem-display'>{display}</div>", unsafe_allow_html=True)
         time.sleep(st.session_state.display_speed)
         st.session_state.current_problem_index += 1
         st.rerun()
@@ -106,14 +114,14 @@ if st.session_state.started and st.session_state.showing_problem:
         st.session_state.start_time = time.time()
         st.rerun()
 
-# 入力フェーズ
+# 入力フェーズ（数字ボタン）
 if not st.session_state.started and st.session_state.problems and not st.session_state.showing_problem:
     st.markdown("<div class='problem-display'>こたえは？</div>", unsafe_allow_html=True)
 
-    # 入力中の数値をリアルタイム表示
-    st.subheader(f"🔢 入力中: `{st.session_state.digit_input or '　'}`")
+    # 入力中の数値表示
+    st.subheader(f"🔢 にゅうりょく: `{st.session_state.digit_input or '　'}`")
 
-    # 数字と . ボタン（横一列）
+    # 数字ボタン（横一列）
     num_row = st.columns(11)
     for i, label in enumerate(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]):
         if num_row[i].button(label):
@@ -122,7 +130,7 @@ if not st.session_state.started and st.session_state.problems and not st.session
             st.session_state.digit_input += label
             st.rerun()
 
-    # 操作ボタン（⌫・C・こたえあわせ）
+    # 操作ボタン
     op_cols = st.columns([1, 1, 2])
     if op_cols[0].button("⌫"):
         st.session_state.digit_input = st.session_state.digit_input[:-1]
