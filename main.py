@@ -50,7 +50,8 @@ for key, val in {
     "total_count": 0,
     "current_problem_index": 0,
     "showing_problem": False,
-} .items():
+    "digit_input": ""
+}.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
@@ -105,27 +106,35 @@ if st.session_state.started and st.session_state.showing_problem:
         st.session_state.start_time = time.time()
         st.rerun()
 
-# 出題後：入力欄・こたえあわせ
+# 出題後：数字ボタンでこたえ入力
 if not st.session_state.started and st.session_state.problems and not st.session_state.showing_problem:
     st.markdown("<div class='problem-display'>こたえは？</div>", unsafe_allow_html=True)
 
     if "answer_final" not in st.session_state:
-        answer_raw = st.text_input("こたえ", value="", key="answer_input", label_visibility="collapsed")
+        st.subheader(f"🔢 入力中: `{st.session_state.digit_input or '　'}`")
 
-        # 自動キーボード（モバイル用）
-        components.html("""
-            <script>
-                window.addEventListener("DOMContentLoaded", function() {
-                    const input = document.querySelector('input[data-testid="stTextInput"]');
-                    if (input) {
-                        input.focus();
-                    }
-                });
-            </script>
-        """, height=0)
+        # 数字ボタン 1〜9
+        cols = st.columns(3)
+        for i in range(1, 10):
+            if cols[(i - 1) % 3].button(str(i), key=f"btn_{i}"):
+                st.session_state.digit_input += str(i)
 
-        if st.button("こたえあわせ", use_container_width=True):
-            st.session_state.answer_final = normalize_input(answer_raw)
+        # 0 と . のボタン
+        zero_cols = st.columns(3)
+        if zero_cols[1].button("0", key="btn_0"):
+            st.session_state.digit_input += "0"
+        if zero_cols[2].button(".", key="btn_dot"):
+            if "." not in st.session_state.digit_input:
+                st.session_state.digit_input += "."
+
+        # 操作ボタン（バックスペース、クリア、OK）
+        op_cols = st.columns([1, 1, 1])
+        if op_cols[0].button("⌫ バックスペース"):
+            st.session_state.digit_input = st.session_state.digit_input[:-1]
+        if op_cols[1].button("C クリア"):
+            st.session_state.digit_input = ""
+        if op_cols[2].button("OK"):
+            st.session_state.answer_final = normalize_input(st.session_state.digit_input)
             st.rerun()
     else:
         answer = st.session_state.answer_final
@@ -155,4 +164,5 @@ if not st.session_state.started and st.session_state.problems and not st.session
 
         # 後片付け
         st.session_state.problems = []
+        st.session_state.digit_input = ""
         del st.session_state["answer_final"]
