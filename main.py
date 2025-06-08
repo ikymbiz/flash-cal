@@ -61,7 +61,7 @@ with st.sidebar:
     st.session_state.min_digits = st.selectbox("最小桁数", [1, 2, 3], index=0)
     st.session_state.max_digits = st.selectbox("最大桁数", [1, 2, 3], index=0)
     st.session_state.operator_choice = st.selectbox("演算子", ["+", "-", "×", "÷"])
-    st.session_state.display_speed = st.slider("表示速度（秒）", 0.2, 2.0, 0.8, 0.1)
+    st.session_state.display_speed = st.slider("表示速度（秒）", 0.1, 2.0, 1.0, 0.1)
 
     if st.session_state.total_count > 0:
         acc = round(100 * st.session_state.correct_count / st.session_state.total_count, 1)
