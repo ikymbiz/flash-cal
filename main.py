@@ -14,9 +14,11 @@ ops = {
     "÷": operator.truediv,
 }
 
+
 # 入力正規化
 def normalize_input(s):
     return s.translate(str.maketrans("０１２３４５６７８９．", "0123456789."))
+
 
 # スタイル
 st.markdown("""
@@ -50,7 +52,7 @@ for key, val in {
     "current_problem_index": 0,
     "showing_problem": False,
     "digit_input": "",
-} .items():
+}.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
@@ -61,11 +63,7 @@ with st.sidebar:
     st.session_state.min_digits = st.selectbox("最小桁数", [1, 2, 3], index=0)
     st.session_state.max_digits = st.selectbox("最大桁数", [1, 2, 3], index=0)
     st.session_state.operator_choice = st.selectbox("演算子", ["+", "-", "×", "÷"])
-    st.session_state.display_speed = st.slider("表示速度（秒）", 0.2, 2.0, 0.8, 0.1)
-
-    if st.session_state.total_count > 0:
-        acc = round(100 * st.session_state.correct_count / st.session_state.total_count, 1)
-        st.metric("正解率", f"{acc}%", f"{st.session_state.correct_count}/{st.session_state.total_count}")
+    st.session_state.display_speed = st.slider("表示速度（秒）", 0.05, 2.0, 0.8, 0.05)
 
 # タイトルとスタート
 st.title("🧮 フラッシュあんざん")
@@ -73,13 +71,13 @@ if st.button("▶ スタート", use_container_width=True):
     digits = []
     for _ in range(st.session_state.num_terms):
         d = random.randint(st.session_state.min_digits, st.session_state.max_digits)
-        digits.append(random.randint(10**(d-1), 10**d - 1))
+        digits.append(random.randint(10 ** (d - 1), 10 ** d - 1))
 
     if st.session_state.operator_choice == "÷":
         result = digits[0]
         for i in range(1, len(digits)):
             d = random.randint(st.session_state.min_digits, st.session_state.max_digits)
-            divisor = random.randint(10**(d-1), 10**d - 1)
+            divisor = random.randint(10 ** (d - 1), 10 ** d - 1)
             result *= divisor
             digits[i] = divisor
         digits[0] = result
@@ -91,6 +89,44 @@ if st.button("▶ スタート", use_container_width=True):
     st.session_state.showing_problem = True
     st.session_state.digit_input = ""
     st.rerun()
+
+# ─── 数字ボタンを大きくするCSS ───
+st.markdown("""
+<style>
+/* 全てのボタンを大きくする汎用的なアプローチ */
+.stButton > button {
+    height: 40px !important;
+    font-size: 60px !important;
+    font-weight: bold !important;
+    border-radius: 10px !important;
+    margin: 2px !important;
+}
+
+/* 数字パッド専用のスタイル */
+.big-number-button {
+    display: inline-block;
+    width: 100%;
+    margin: 2px;
+}
+
+.big-number-button button {
+    width: 100% !important;
+    height: 100px !important;
+    font-size: 50px !important;
+    font-weight: bold !important;
+    border-radius: 15px !important;
+    background-color: #4CAF50 !important;
+    color: white !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+.big-number-button button:hover {
+    background-color: #45a049 !important;
+    transform: scale(1.02) !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # 出題フェーズ（演算子も表示）
 if st.session_state.started and st.session_state.showing_problem:
@@ -114,33 +150,72 @@ if st.session_state.started and st.session_state.showing_problem:
         st.session_state.start_time = time.time()
         st.rerun()
 
-# 入力フェーズ（数字ボタン）
+# 入力フェーズ（大きな数字ボタン）
 if not st.session_state.started and st.session_state.problems and not st.session_state.showing_problem:
     st.markdown("<div class='problem-display'>こたえは？</div>", unsafe_allow_html=True)
-
-    # 入力中の数値表示
     st.subheader(f"🔢 にゅうりょく: `{st.session_state.digit_input or '　'}`")
 
-    # 数字ボタン（横一列）
-    num_row = st.columns(11)
-    for i, label in enumerate(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]):
-        if num_row[i].button(label):
-            if label == "." and "." in st.session_state.digit_input:
-                continue
-            st.session_state.digit_input += label
+    # 数字のグリッド（3x4 + 操作ボタン）
+
+    # 1行目: 1, 2, 3
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("1", key="btn1", use_container_width=True):
+            st.session_state.digit_input += "1"
+            st.rerun()
+    with col2:
+        if st.button("2", key="btn2", use_container_width=True):
+            st.session_state.digit_input += "2"
+            st.rerun()
+    with col3:
+        if st.button("3", key="btn3", use_container_width=True):
+            st.session_state.digit_input += "3"
             st.rerun()
 
-    # 操作ボタン
-    op_cols = st.columns([1, 1, 2])
-    if op_cols[0].button("⌫"):
-        st.session_state.digit_input = st.session_state.digit_input[:-1]
-        st.rerun()
-    if op_cols[1].button("C"):
-        st.session_state.digit_input = ""
-        st.rerun()
-    if op_cols[2].button("こたえあわせ"):
-        st.session_state.answer_final = normalize_input(st.session_state.digit_input)
-        st.rerun()
+    # 2行目: 4, 5, 6
+    col4, col5, col6 = st.columns(3)
+    with col4:
+        if st.button("4", key="btn4", use_container_width=True):
+            st.session_state.digit_input += "4"
+            st.rerun()
+    with col5:
+        if st.button("5", key="btn5", use_container_width=True):
+            st.session_state.digit_input += "5"
+            st.rerun()
+    with col6:
+        if st.button("6", key="btn6", use_container_width=True):
+            st.session_state.digit_input += "6"
+            st.rerun()
+
+    # 3行目: 7, 8, 9
+    col7, col8, col9 = st.columns(3)
+    with col7:
+        if st.button("7", key="btn7", use_container_width=True):
+            st.session_state.digit_input += "7"
+            st.rerun()
+    with col8:
+        if st.button("8", key="btn8", use_container_width=True):
+            st.session_state.digit_input += "8"
+            st.rerun()
+    with col9:
+        if st.button("9", key="btn9", use_container_width=True):
+            st.session_state.digit_input += "9"
+            st.rerun()
+
+    # 4行目: 0, ., 操作
+    col0, colback,colbtnsubmit = st.columns(3)
+    with col0:
+        if st.button("0", key="btn0", use_container_width=True):
+            st.session_state.digit_input += "0"
+            st.rerun()
+    with colback:
+        if st.button("⌫", key="btnback", use_container_width=True):
+            st.session_state.digit_input = st.session_state.digit_input[:-1]
+            st.rerun()
+    with colbtnsubmit:
+        if st.button("こたえあわせ", key="btnsubmit", use_container_width=True):
+            st.session_state.answer_final = normalize_input(st.session_state.digit_input)
+            st.rerun()
 
 # 判定フェーズ
 if "answer_final" in st.session_state:
@@ -160,8 +235,10 @@ if "answer_final" in st.session_state:
         if correct:
             st.session_state.correct_count += 1
             st.success(f"✅ せいかい！（{elapsed} びょう）")
+
         else:
-            st.error(f"❌ まちがい！せいかい：{round(result,2)}（{elapsed} びょう）")
+            st.error(f"❌ まちがい！せいかい：{round(result, 2)}（{elapsed} びょう）")
+
 
         expr = f" {st.session_state.operator} ".join(map(str, st.session_state.problems))
         st.info(f"🧮 もんだい： {expr} = {round(result, 2)}")
@@ -173,3 +250,13 @@ if "answer_final" in st.session_state:
     st.session_state.problems = []
     st.session_state.digit_input = ""
     del st.session_state["answer_final"]
+
+    with st.sidebar:
+        # total_count が 0 より大きい＝最低１回は回答済み
+        if st.session_state.get("total_count", 0) > 0:
+            acc = round(100 * st.session_state.correct_count / st.session_state.total_count, 1)
+            st.metric(
+                "最新の正解率",
+                f"{acc}%",
+                f"{st.session_state.correct_count}/{st.session_state.total_count}"
+            )
